@@ -377,7 +377,7 @@ def build_blog():
             
         posts.append({
             "title": metadata["title"], 
-            "url": f"/blog/{slug}/", 
+            "url": f"blog/{slug}/", 
             "date": metadata["date"],
             "date_iso": metadata.get("date_iso", metadata["date"]),
             "tags": metadata.get("tags", []),
@@ -460,7 +460,7 @@ def build_index(posts):
     {search_box}
     {tag_buttons}
     {post_list}
-    <script src='/static/js/blog-search.js'></script>"""
+    <script src='static/js/blog-search.js'></script>"""
     
     with open(TEMPLATES_DIR / "base.html", "r") as f:
         base = f.read()
