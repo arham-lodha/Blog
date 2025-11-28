@@ -249,6 +249,25 @@ def generate_toc(html, max_depth=3):
     toc_html += '</li>\n</ul>\n</nav>\n'
     return toc_html
 
+def fix_paths(html):
+    """
+    Prepend BASE_URL to all absolute paths starting with /.
+    Ignores paths that already start with http, https, or relative paths.
+    """
+    if not BASE_URL:
+        return html
+        
+    # Regex to match href="/...", src="/...", action="/..."
+    # We only match paths starting with / that are NOT // (protocol relative)
+    pattern = r'(href|src|action)=["\']/(?!/)([^"\']*)["\']'
+    
+    def replace_path(match):
+        attr = match.group(1)
+        path = match.group(2)
+        return f'{attr}="{BASE_URL}/{path}"'
+    
+    return re.sub(pattern, replace_path, html)
+
 def parse_metadata(typ_content):
     """Extracts title, date, tags, and abstract from Typst content."""
     title_match = re.search(r'#set document\(.*?title:\s*"(.*?)".*?\)', typ_content, re.DOTALL)
@@ -372,12 +391,15 @@ def build_blog():
         
         final_html = render_template("post.html", context)
         
+        # Apply path fix for GitHub Pages
+        final_html = fix_paths(final_html)
+        
         with open(post_dir / "index.html", "w", encoding="utf-8") as f:
             f.write(final_html)
             
         posts.append({
             "title": metadata["title"], 
-            "url": f"blog/{slug}/", 
+            "url": f"/blog/{slug}/", 
             "date": metadata["date"],
             "date_iso": metadata.get("date_iso", metadata["date"]),
             "tags": metadata.get("tags", []),
@@ -410,6 +432,9 @@ def build_index(posts):
         }
         # Use post template for consistency or base? Post has the article wrapper.
         html = render_template("post.html", context)
+        
+        # Apply path fix for GitHub Pages
+        html = fix_paths(html)
         
         with open(OUTPUT_DIR / "index.html", "w") as f:
             f.write(html)
@@ -460,13 +485,16 @@ def build_index(posts):
     {search_box}
     {tag_buttons}
     {post_list}
-    <script src='static/js/blog-search.js'></script>"""
+    <script src='/static/js/blog-search.js'></script>"""
     
     with open(TEMPLATES_DIR / "base.html", "r") as f:
         base = f.read()
 
     blog_index_html = base.replace("{% block content %}{% endblock %}", blog_content)
     blog_index_html = blog_index_html.replace("{% block title %}My Math Website{% endblock %}", "Blog")
+    
+    # Apply path fix for GitHub Pages
+    blog_index_html = fix_paths(blog_index_html)
     
     with open(OUTPUT_DIR / "blog" / "index.html", "w") as f:
         f.write(blog_index_html)

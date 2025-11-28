@@ -10,3 +10,6 @@ USE_TYPST_HTML_FOR_BLOG = True  # Typst HTML for blog posts (package support + m
 
 USE_SVG_FOR_PAGES = False
 USE_TYPST_HTML_FOR_PAGES = True  # Typst HTML for pages
+
+# Base URL for deployment (e.g., "/Blog" for GitHub Pages, "" for local/root)
+BASE_URL = "/Blog"
