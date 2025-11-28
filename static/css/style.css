@@ -11,6 +11,11 @@
     --font-mono: 'Courier New', 'Courier', monospace;
 }
 
+/* Root and reset */
+html {
+    scroll-behavior: smooth;
+}
+
 * {
     margin: 0;
     padding: 0;
