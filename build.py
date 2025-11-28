@@ -7,7 +7,11 @@ from pathlib import Path
 
 # Import configuration
 try:
-    from build_config import USE_SVG_FOR_BLOG, USE_SVG_FOR_PAGES, USE_TYPST_HTML_FOR_BLOG, USE_TYPST_HTML_FOR_PAGES
+    from build_config import (
+    USE_SVG_FOR_BLOG, USE_TYPST_HTML_FOR_BLOG,
+    USE_SVG_FOR_PAGES, USE_TYPST_HTML_FOR_PAGES,
+    BASE_URL
+)
 except ImportError:
     # Defaults if config file doesn't exist
     USE_SVG_FOR_BLOG = False
