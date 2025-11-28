@@ -1,0 +1,22 @@
+<div id='sketch-container' style='margin: 2rem 0;'></div>
+<script src='https://cdn.jsdelivr.net/npm/p5@1.7.0/lib/p5.js'></script>
+<script>
+function setup() {
+  let canvas = createCanvas(600, 400);
+  canvas.parent('sketch-container');
+}
+
+function draw() {
+  background(240);
+  fill(66, 135, 245);
+  noStroke();
+  
+  // Draw a circle that follows the mouse
+  ellipse(mouseX, mouseY, 50, 50);
+  
+  // Draw some text
+  fill(0);
+  textSize(16);
+  text('Move your mouse!', 10, 20);
+}
+</script>

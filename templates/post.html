@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Math Major{% endblock %}
+
+{% block content %}
+<article>
+    <header>
+        {% if show_title %}
+        <h1>{{ title }}</h1>
+        {% endif %}
+        {% if date %}
+        <div class="post-meta">
+            <time datetime="{{ date }}">{{ date }}</time>
+        </div>
+        {% endif %}
+    </header>
+
+    <div class="typst-content">
+        {{ content }}
+    </div>
+</article>
+{% endblock %}

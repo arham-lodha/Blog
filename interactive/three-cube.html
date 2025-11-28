@@ -1,0 +1,43 @@
+<div id='three-container' style='width: 100%; height: 400px; margin: 2rem 0;'></div>
+<script src='https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js'></script>
+<script>
+    // Create scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, 600 / 400, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+    const container = document.getElementById('three-container');
+    renderer.setSize(container.offsetWidth, 400);
+    container.appendChild(renderer.domElement);
+
+    // Create a rotating cube
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshPhongMaterial({ color: 0x4287f5 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    // Add lighting
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(5, 5, 5);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x404040));
+
+    camera.position.z = 3;
+
+    // Animation loop
+    function animate() {
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        const width = container.offsetWidth;
+        renderer.setSize(width, 400);
+        camera.aspect = width / 400;
+        camera.updateProjectionMatrix();
+    });
+</script>

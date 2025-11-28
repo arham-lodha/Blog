@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Output directory (generated files)
+output/
+
+# Typst temporary files
+*.pdf
+*.svg
+*.html
+!interactive/**/*.html
+!templates/**/*.html
+
+# Node modules (if accidentally installed)
+node_modules/
+package-lock.json
