@@ -257,19 +257,24 @@ def fix_paths(html):
     """
     Prepend BASE_URL to all absolute paths starting with /.
     Ignores paths that already start with http, https, or relative paths.
+    Does NOT modify anchor links (#) or mailto: links.
     """
     if not BASE_URL:
         return html
         
     # Regex to match href="/...", src="/...", action="/..."
+    # Excludes: mailto:, #anchors, //, http://, https://
     # Matches: attr=" /path " or attr=' /path '
     # Captures: 1=attr name, 2=quote, 3=path
-    pattern = r'(href|src|action)=([\"\'])\s*/(?!/)([^\"\']*)\2'
+    pattern = r'(href|src|action)=([\"\'])\s*/(?![/#])([^\"\']*)\2'
     
     def replace_path(match):
         attr = match.group(1)
         quote = match.group(2)
         path = match.group(3)
+        # Skip mailto links
+        if path.startswith('mailto:'):
+            return match.group(0)
         return f'{attr}={quote}{BASE_URL}/{path}{quote}'
     
     return re.sub(pattern, replace_path, html)
