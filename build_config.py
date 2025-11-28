@@ -8,8 +8,11 @@
 USE_SVG_FOR_BLOG = False
 USE_TYPST_HTML_FOR_BLOG = True  # Typst HTML for blog posts (package support + math)
 
+import os
+
 USE_SVG_FOR_PAGES = False
 USE_TYPST_HTML_FOR_PAGES = True  # Typst HTML for pages
 
 # Base URL for deployment (e.g., "/Blog" for GitHub Pages, "" for local/root)
-BASE_URL = "/Blog"
+# Defaults to empty string for local development
+BASE_URL = os.getenv("BASE_URL", "")

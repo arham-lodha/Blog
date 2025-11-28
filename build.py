@@ -262,13 +262,15 @@ def fix_paths(html):
         return html
         
     # Regex to match href="/...", src="/...", action="/..."
-    # We only match paths starting with / that are NOT // (protocol relative)
-    pattern = r'(href|src|action)=["\']/(?!/)([^"\']*)["\']'
+    # Matches: attr=" /path " or attr=' /path '
+    # Captures: 1=attr name, 2=quote, 3=path
+    pattern = r'(href|src|action)=([\"\'])\s*/(?!/)([^\"\']*)\2'
     
     def replace_path(match):
         attr = match.group(1)
-        path = match.group(2)
-        return f'{attr}="{BASE_URL}/{path}"'
+        quote = match.group(2)
+        path = match.group(3)
+        return f'{attr}={quote}{BASE_URL}/{path}{quote}'
     
     return re.sub(pattern, replace_path, html)
 

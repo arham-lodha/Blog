@@ -35,6 +35,8 @@ jobs:
       
       - name: Build site
         run: python3 build.py
+        env:
+          BASE_URL: /Blog
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
