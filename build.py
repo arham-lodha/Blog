@@ -36,42 +36,38 @@ def copy_static():
     if STATIC_DIR.exists():
         shutil.copytree(STATIC_DIR, OUTPUT_DIR / "static")
 
-def compile_math_to_svg(math_content):
-    """Compiles a single math expression to SVG."""
-    # Create a temporary file with the math
-    # We use a minimal page setup to fit the content
-    temp_typ = Path("temp_math.typ")
-    temp_svg = Path("temp_math.svg")
+def compile_math_to_latex(math_content):
+    """Converts Typst math to LaTeX using Pandoc."""
+    # We need to wrap it in $...$ for pandoc to recognize it as math
+    # But the input math_content already has $...$ from the regex match?
+    # The regex in process_math captures the content INSIDE the dollars.
+    # So we reconstruct it.
     
-    typ_source = f"""
-#set page(width: auto, height: auto, margin: 0pt, fill: none)
-${math_content}$
-"""
-    with open(temp_typ, "w", encoding="utf-8") as f:
-        f.write(typ_source)
-        
+    # Check if it's display math (starts/ends with space in Typst usually implies block, 
+    # but strictly $ x $ is inline, $ x $ with newlines is block.
+    # Actually, let's just pass it to pandoc as a typst fragment.
+    
+    typ_source = f"${math_content}$"
+    
     try:
-        subprocess.run(["typst", "compile", str(temp_typ), str(temp_svg)], check=True, capture_output=True)
-        if temp_svg.exists():
-            with open(temp_svg, "r", encoding="utf-8") as f:
-                svg_content = f.read()
-            # Clean up temp files
-            temp_typ.unlink(missing_ok=True)
-            temp_svg.unlink(missing_ok=True)
-            return svg_content
+        # echo "$...$" | pandoc -f typst -t latex
+        result = subprocess.run(
+            ["pandoc", "-f", "typst", "-t", "latex"],
+            input=typ_source,
+            text=True,
+            capture_output=True,
+            check=True
+        )
+        return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        print(f"Error compiling math: {math_content}")
-        print(e.stderr.decode())
-    
-    # Clean up temp files in case of error
-    temp_typ.unlink(missing_ok=True)
-    temp_svg.unlink(missing_ok=True)
-    return None
+        print(f"Error converting math to LaTeX: {math_content}")
+        print(e.stderr)
+        return None
 
 def process_math(typ_content):
     """
-    Extracts math expressions, compiles them to SVG, and replaces them with placeholders.
-    Returns modified content and a mapping of placeholders to SVG content.
+    Extracts math expressions, converts them to LaTeX, and replaces them with placeholders.
+    Returns modified content and a mapping of placeholders to LaTeX content.
     """
     math_map = {}
     counter = 0
@@ -80,19 +76,16 @@ def process_math(typ_content):
         nonlocal counter
         math_content = match.group(1)
         
-        print(f"Compiling math: {math_content.strip()}")
-        svg = compile_math_to_svg(math_content)
+        print(f"Converting math: {math_content.strip()}")
+        latex = compile_math_to_latex(math_content)
         
-        if svg:
-            # We wrap it in a span with class
-            # Use raw block to prevent Typst from formatting underscores
+        if latex:
             placeholder = f"__MATH_{counter}__"
-            # Add class to SVG
-            svg = svg.replace('<svg', '<svg class="math-svg"')
-            math_map[placeholder] = svg
+            math_map[placeholder] = latex
             counter += 1
+            # Use raw block to prevent Typst from formatting underscores
             return f"`{placeholder}`"
-        return match.group(0) # Return original if compilation fails
+        return match.group(0) # Return original if conversion fails
 
     # Regex for math: $...$
     # Simple regex: \$([^$]+)\$ (non-greedy?)
