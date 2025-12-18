@@ -18,7 +18,7 @@ All content on this site is written in *Typst*, a modern markup language with ex
 
 == Rendering Pipeline
 
-The site uses **Typst's native HTML export** for all content:
+The site uses *Typst's native HTML export* for all content:
 
 ```bash
 typst compile --features html --format html

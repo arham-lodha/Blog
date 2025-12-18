@@ -36,46 +36,124 @@ def copy_static():
     if STATIC_DIR.exists():
         shutil.copytree(STATIC_DIR, OUTPUT_DIR / "static")
 
+def compile_math_to_svg(math_content):
+    """Compiles a single math expression to SVG."""
+    # Create a temporary file with the math
+    # We use a minimal page setup to fit the content
+    temp_typ = Path("temp_math.typ")
+    temp_svg = Path("temp_math.svg")
+    
+    typ_source = f"""
+#set page(width: auto, height: auto, margin: 0pt)
+${math_content}$
+"""
+    with open(temp_typ, "w", encoding="utf-8") as f:
+        f.write(typ_source)
+        
+    try:
+        subprocess.run(["typst", "compile", str(temp_typ), str(temp_svg)], check=True, capture_output=True)
+        if temp_svg.exists():
+            with open(temp_svg, "r", encoding="utf-8") as f:
+                svg_content = f.read()
+            # Clean up temp files
+            temp_typ.unlink(missing_ok=True)
+            temp_svg.unlink(missing_ok=True)
+            return svg_content
+    except subprocess.CalledProcessError as e:
+        print(f"Error compiling math: {math_content}")
+        print(e.stderr.decode())
+    
+    # Clean up temp files in case of error
+    temp_typ.unlink(missing_ok=True)
+    temp_svg.unlink(missing_ok=True)
+    return None
+
+def process_math(typ_content):
+    """
+    Extracts math expressions, compiles them to SVG, and replaces them with placeholders.
+    Returns modified content and a mapping of placeholders to SVG content.
+    """
+    math_map = {}
+    counter = 0
+    
+    def replace_math(match):
+        nonlocal counter
+        math_content = match.group(1)
+        
+        print(f"Compiling math: {math_content.strip()}")
+        svg = compile_math_to_svg(math_content)
+        
+        if svg:
+            # We wrap it in a span with class
+            # Use raw block to prevent Typst from formatting underscores
+            placeholder = f"__MATH_{counter}__"
+            # Add class to SVG
+            svg = svg.replace('<svg', '<svg class="math-svg"')
+            math_map[placeholder] = svg
+            counter += 1
+            return f"`{placeholder}`"
+        return match.group(0) # Return original if compilation fails
+
+    # Regex for math: $...$
+    # Simple regex: \$([^$]+)\$ (non-greedy?)
+    pattern = r'\$([^$]+)\$'
+    
+    processed_content = re.sub(pattern, replace_math, typ_content)
+    return processed_content, math_map
+
 def compile_typst(typ_file, use_svg=False, use_typst_html=False, skip_toc=False):
     """Compiles a Typst file to HTML (via Pandoc, Typst HTML, or SVG)."""
     
     if use_typst_html:
-        # Use Typst's native HTML export (experimental)
-        html_file = typ_file.with_suffix(".html")
+        # Read content first to process math
+        with open(typ_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            
+        # Process math
+        content_with_placeholders, math_map = process_math(content)
+        
+        # Write to temp file for compilation
+        temp_file = typ_file.with_name(f"{typ_file.stem}_temp.typ")
+        with open(temp_file, "w", encoding="utf-8") as f:
+            f.write(content_with_placeholders)
+            
         try:
-            subprocess.run(
-                ["typst", "compile", "--features", "html", "--format", "html", str(typ_file), str(html_file)],
-                check=True,
-                capture_output=True
-            )
+            cmd = ["typst", "compile", "--features", "html", "--format", "html", str(temp_file), "-"]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            html = result.stdout
             
-            with open(html_file, "r", encoding="utf-8") as f:
-                html_content = f.read()
-            
-            # Clean up
-            html_file.unlink()
-            
-            # Extract body content only
-            body_match = re.search(r'<body.*?>(.*?)</body>', html_content, re.DOTALL)
-            if body_match:
-                html = body_match.group(1)
-            else:
-                html = html_content
-            
-            # Add IDs to headers for TOC
-            html = add_header_ids(html)
-            
-            # Generate and prepend TOC (unless skipped)
-            if not skip_toc:
-                toc_html = generate_toc(html, max_depth=3)
-                if toc_html:
-                    html = toc_html + html
-            
-            return html
-            
+            # Inject SVGs back
+            # Typst HTML export wraps raw blocks in <code> tags
+            for placeholder, svg in math_map.items():
+                # Try replacing the code block first
+                html = html.replace(f"<code>{placeholder}</code>", svg)
+                # Fallback to simple replacement if code tags aren't there
+                html = html.replace(placeholder, svg)
+                
         except subprocess.CalledProcessError as e:
-            print(f"Error compiling {typ_file} to HTML: {e.stderr.decode()}")
-            return None
+            print(f"Error compiling {typ_file}:")
+            print(e.stderr)
+            html = f"<p>Error compiling {typ_file}</p>"
+        finally:
+            temp_file.unlink(missing_ok=True)
+            
+        # Extract body (Typst HTML export outputs full HTML)
+        body_match = re.search(r'<body.*?>(.*?)</body>', html, re.DOTALL)
+        if body_match:
+            html = body_match.group(1)
+            
+        # Add IDs to headers for TOC
+        html = add_header_ids(html)
+        
+        # Generate and prepend TOC (unless skipped)
+        if not skip_toc:
+            toc_html = generate_toc(html, max_depth=3)
+            if toc_html:
+                html = toc_html + html
+        
+        return html
+            
+
     
     elif use_svg:
         # Compile to SVG using typst
