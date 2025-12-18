@@ -19,9 +19,6 @@ __pycache__/
 output/
 
 # Typst temporary files
-*.pdf
-*.svg
-*.html
 !interactive/**/*.html
 !templates/**/*.html
 
