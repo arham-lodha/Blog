@@ -44,7 +44,7 @@ def compile_math_to_svg(math_content):
     temp_svg = Path("temp_math.svg")
     
     typ_source = f"""
-#set page(width: auto, height: auto, margin: 0pt)
+#set page(width: auto, height: auto, margin: 0pt, fill: none)
 ${math_content}$
 """
     with open(temp_typ, "w", encoding="utf-8") as f:
